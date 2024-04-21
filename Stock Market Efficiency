@@ -1,0 +1,55 @@
+
+def main():
+    i = 1
+    while (i<=12):
+        stock_data = fetch_stock_data()
+        # print(stock_data)
+        # proc_dt= process_data(stock_data)
+        # final = json.dumps(proc_dt, indent=2)
+        # print(final)
+        # data_to_insert ={'Stock_details':final}
+        # print(data_to_insert)
+        if stock_data:
+            stock_dt = pd.DataFrame(stock_data,columns=['symbol','lastPrice','dayLow','dayHigh'])
+            # print(stock_dt)
+            send_to_sqs(stock_data)
+            time.sleep(2)  # Wait for 1 minute before fetching again
+        else:
+            print("Failed to fetch stock data. Retrying in 10 seconds...")
+            time.sleep(10)
+        i=i+1
+
+
+
+sqs_client = boto3.client('sqs',region_name=AWS_REGION,aws_access_key_id = AWS_ACCESS_KEY_ID,aws_secret_access_key = AWS_SECRET_ACCESS_KEY)
+lambda_client = boto3.client('lambda',region_name=AWS_REGION,aws_access_key_id = AWS_ACCESS_KEY_ID,aws_secret_access_key = AWS_SECRET_ACCESS_KEY)
+
+
+# SQS queue URL
+# queue_url = 'YOUR_SQS_QUEUE_URL'
+YOUR_LAMBDA_FUNCTION_NAME="arn:aws:lambda:ap-south-1:471112837690:function:Process_load_dynamoBD"
+def lambda_handler():
+    # Get the number of messages in the SQS queue
+    response = sqs_client.get_queue_attributes(
+        QueueUrl=SQS_QUEUE_URL,
+        AttributeNames=['ApproximateNumberOfMessages']
+    )
+    num_messages = int(response['Attributes']['ApproximateNumberOfMessages'])
+    print( "no of msg",num_messages)
+
+    # If 10 or more messages are in the queue, trigger the Lambda function
+    # if num_messages >= 10:
+    #     lambda_response = lambda_client.invoke(
+    #         FunctionName='arn:aws:lambda:ap-south-1:471112837690:function:Process_load_dynamoBD',
+    #         InvocationType='Event',
+    #         Payload='{}'  # You can provide any payload you want to pass to the Lambda function
+    #     )
+    #
+    #     print("Lambda function triggered")
+    # else:
+    #     print("Not enough messages in the queue")
+
+
+
+main()
+# lambda_handler()
